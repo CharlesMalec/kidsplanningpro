@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
-  height: 100%;
+
+:root {
+--bg: #fafafa;
 }
+html, body, #root { height: 100%; }
+body { background: var(--bg); font-family: theme('fontFamily.sans'); }
