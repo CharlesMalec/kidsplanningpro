@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { collection, getDocs, query, where } from "firebase/firestore";
 
-export default function LoginPage() {
+export default function InviteSignup() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,19 +20,23 @@ export default function LoginPage() {
   const inviteToken = params.get("invite");
   const familyId = params.get("family");
 
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">("signup");
   const [email, setEmail] = useState("");
-  const [emailLocked, setEmailLocked] = useState(false);
+  const [emailLocked, setEmailLocked] = useState(true);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [probing, setProbing] = useState(!!inviteToken);
+  const [probing, setProbing] = useState(true);
 
-  // If invite present, prefill email and choose mode based on existing methods
+  // Load invite → lock email → choose mode automatically
   useEffect(() => {
     (async () => {
-      if (!inviteToken || !familyId) return setProbing(false);
       try {
+        if (!inviteToken || !familyId) {
+          setError("Missing invitation information.");
+          setProbing(false);
+          return;
+        }
         const q = query(
           collection(db, "families", familyId, "invites"),
           where("token", "==", inviteToken)
@@ -73,7 +77,7 @@ export default function LoginPage() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
-      navigate(next, { replace: true });
+      navigate(next, { replace: true }); // back to /accept-invite?... to finalize
     } catch (err: any) {
       setError(err.message ?? String(err));
     } finally {
@@ -86,23 +90,22 @@ export default function LoginPage() {
       <Card className="max-w-sm w-full">
         <CardHeader>
           <h1 className="text-2xl font-semibold mb-1">
-            {mode === "login" ? "Log in" : "Set your password"}
+            {mode === "login" ? "Log in" : "Create your password"}
           </h1>
           <p className="text-sm opacity-70">
             {mode === "login"
               ? "Enter your password to continue"
-              : "Create a password for your first sign-in"}
+              : "Set a password for your first sign-in"}
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-3">
             <Input
               type="email"
-              placeholder="email@example.com"
               value={email}
+              readOnly={emailLocked}
               onChange={(e) => setEmail(e.target.value)}
               required
-              readOnly={emailLocked}
             />
             <Input
               type="password"
@@ -114,7 +117,7 @@ export default function LoginPage() {
 
             {(error || probing) && (
               <div className="text-sm text-red-700 bg-red-50 p-2 rounded-2xl">
-                {probing ? "Checking your invitation…" : error}
+                {probing ? "Loading your invitation…" : error}
               </div>
             )}
 
@@ -127,7 +130,8 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {!emailLocked && (
+          {/* In case someone lands here without an invite, allow manual switch */}
+          {!inviteToken && (
             <button
               className="text-sm text-brand-600 mt-3 underline"
               onClick={() =>

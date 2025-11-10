@@ -3,12 +3,19 @@ import AppShell from "@/components/AppShell";
 import UserProfile from "@/pages/UserProfile";
 import LoginPage from "@/pages/LoginPage";
 import ProtectedRoute from "@/routes/ProtectedRoute";
+import InviteParent from "./pages/InviteParent";
+import AcceptInvite from "./pages/AcceptInvite";
+import InviteSignup from "./pages/InviteSignup";
 
 
 export default function App() {
   return (
     <Routes>
+      {/* PUBLIC routes */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/invite-signup" element={<InviteSignup />} />
+      <Route path="/accept-invite" element={<AcceptInvite />} />
+
       <Route
         path="/"
         element={
@@ -22,6 +29,15 @@ export default function App() {
         {/* future: <Route path="calendar" element={<CalendarView />} /> */}
         {/* future: <Route path="reports" element={<ReportsView />} /> */}
       </Route>
+      <Route
+        path="invite"
+        element={
+          <ProtectedRoute>
+            <InviteParent />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
