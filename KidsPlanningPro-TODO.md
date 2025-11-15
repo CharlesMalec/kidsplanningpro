@@ -1,12 +1,12 @@
 # KidsPlanningPro — TODO Tracker
 
 ## Phase 0 — Setup
-- [ ] Create Vite + React + Tailwind base project
-- [ ] Initialize Firebase (Auth + Firestore + Hosting)
-- [ ] Configure .env and secure keys
-- [ ] Set up GitHub repository and base README
-- [ ] Implement authentication UI (email + Google)
-- [ ] Family creation flow (name, timezone)
+- [X] Create Vite + React + Tailwind base project
+- [X] Initialize Firebase (Auth + Firestore + Hosting)
+- [X] Configure .env and secure keys
+- [X] Set up GitHub repository and base README
+- [X] Implement authentication UI (email + Google)
+- [X] Family creation flow (name, timezone)
 
 ## Phase 1 — Core Scheduling
 - [ ] Setup Wizard (children, odd/even, weekly template, invite second parent)

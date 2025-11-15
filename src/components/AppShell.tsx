@@ -15,8 +15,19 @@ export default function AppShell() {
                 <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
                     <Link to="/profile" className="font-semibold">KidsPlanningPro</Link>
                     <nav className="flex items-center gap-2">
-                        <Link to="/calendar" className="text-sm px-3 py-1 rounded-2xl hover:bg-gray-100">Calendar</Link>
-                        <Link to="/reports" className="text-sm px-3 py-1 rounded-2xl hover:bg-gray-100">Reports</Link>
+                        <Link to="/family/setup" className="text-sm px-3 py-1 rounded-2xl hover:bg-gray-100">
+                            Family
+                        </Link>
+                        <Link to="/calendar" className="text-sm px-3 py-1 rounded-2xl hover:bg-gray-100">
+                            Calendar
+                        </Link>
+                        <Link to="/reports" className="text-sm px-3 py-1 rounded-2xl hover:bg-gray-100">
+                            Reports
+                        </Link>
+                        {/* (Optional) add Profile */}
+                        <Link to="/profile" className="text-sm px-3 py-1 rounded-2xl hover:bg-gray-100">
+                            Profile
+                        </Link>
                         <Button variant="secondary" onClick={onLogout}>Logout</Button>
                     </nav>
                 </div>

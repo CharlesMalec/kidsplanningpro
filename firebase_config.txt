@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+
+    function isFamilyOwner(familyId) {
+      return signedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.owners;
+    }
+
+    function isFamilyMember(familyId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid));
+    }
+
+    function validHexColor(c) {
+      return c is string && c.size() == 7 && c.matches('^#[0-9A-Fa-f]{6}$');
+    }
+
+    // Birthdate must not be in the future
+    function validBirthdate(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    // ---------- users ----------
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ---------- families ----------
+    match /families/{familyId} {
+
+      // Allow seeing/maintaining your own family doc
+      allow read: if isFamilyOwner(familyId) || isFamilyMember(familyId);
+      // Allow creating a family (your transaction sets owners + members later)
+      allow create: if signedIn();
+      // Owners or members can update the family doc (name/timezone, etc.)
+      allow update, delete: if isFamilyOwner(familyId) || isFamilyMember(familyId);
+
+      // ----- members subcollection -----
+      match /members/{uid} {
+        // Limit visibility to people in the family (avoid global leak)
+        allow read: if isFamilyOwner(familyId) || isFamilyMember(familyId);
+        // A member can write their own membership doc; owners can manage any
+        allow create, update, delete: if isFamilyOwner(familyId) || (signedIn() && request.auth.uid == uid);
+      }
+
+      // ----- invites subcollection -----
+      match /invites/{inviteId} {
+        // Anyone with the link may read minimal fields to render the accept page
+        allow read: if true;
+
+        // Create only once per emailKey/document id; restricted to family participants
+        allow create: if (isFamilyOwner(familyId) || isFamilyMember(familyId)) &&
+                      !exists(/databases/$(database)/documents/families/$(familyId)/invites/$(inviteId));
+
+        // Update allowed for:
+        // - owners/members (revoke/resend)
+        // - the targeted invitee (so they can accept before being a member)
+        allow update: if isFamilyOwner(familyId) || isFamilyMember(familyId) ||
+                      (signedIn() && resource.data.targetEmail == request.auth.token.email);
+
+        allow delete: if isFamilyOwner(familyId);
+      }
+
+      // ----- children subcollection -----
+      match /children/{childId} {
+        allow read: if isFamilyOwner(familyId) || isFamilyMember(familyId);
+
+        // Create/Update with strict schema + validation
+        allow create, update: if (isFamilyOwner(familyId) || isFamilyMember(familyId)) &&
+          request.resource.data.keys().hasOnly(['name','birthdate','color','createdAt','updatedAt']) &&
+          request.resource.data.name is string &&
+          request.resource.data.name.size() > 0 &&
+          request.resource.data.name.size() <= 60 &&
+          validBirthdate(request.resource.data.birthdate) &&
+          validHexColor(request.resource.data.color);
+
+        allow delete: if isFamilyOwner(familyId) || isFamilyMember(familyId);
+      }
+    
+    match /scheduleRules/{ruleId} {
+  			allow read: if isFamilyOwner(familyId) || isFamilyMember(familyId);
+			  allow create, update: if (isFamilyOwner(familyId) || isFamilyMember(familyId)) &&
+          request.resource.data.type in ['ODD_EVEN','WEEKLY_TEMPLATE'] &&
+          (!('timezone' in request.resource.data) || request.resource.data.timezone is string) &&
+          request.resource.data.weekStart in ['MON','TUE','WED','THU','FRI','SAT','SUN'] &&
+          request.resource.data.active is bool;
+        allow delete: if isFamilyOwner(familyId);
+			}
+
+    }
+  }
+}
